@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amitabh Fire Wall - Enhanced Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Russo+One&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #510200;
+            font-family: 'Russo One', sans-serif;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(ellipse at center, #8B0000 0%, #510200 50%, #2A0000 100%);
+        }
+
+        #canvas {
+            display: none;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 0 0 100px rgba(255, 50, 0, 0.3);
+        }
+        
+        /* Game HUD */
+        #gameHUD {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: none;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .hudElement {
+            display: inline-block;
+            margin: 10px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, rgba(139,0,0,0.9), rgba(81,2,0,0.9));
+            border: 2px solid #FF6600;
+            border-radius: 15px;
+            color: #FFD700;
+            font-family: 'Bebas Neue', cursive;
+            font-size: 24px;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            box-shadow: 0 0 20px rgba(255, 100, 0, 0.5);
+            animation: hudPulse 2s infinite;
+        }
+
+        @keyframes hudPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 100, 0, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(255, 150, 0, 0.7); }
+        }
+
+        #highScore {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,140,0,0.2));
+            border-color: #FFD700;
+        }
+
+        #comboDisplay {
+            position: absolute;
+            top: 70px;
+            left: 20px;
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #comboDisplay.active {
+            opacity: 1;
+            animation: comboFlash 0.5s;
+        }
+
+        @keyframes comboFlash {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        #powerUpIndicator {
+            position: absolute;
+            top: 130px;
+            left: 20px;
+            font-size: 36px;
+            display: none;
+        }
+
+        .powerUpActive {
+            animation: powerUpGlow 0.5s infinite;
+        }
+
+        @keyframes powerUpGlow {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.2) rotate(10deg); }
+        }
+
+        #difficultyIndicator {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            font-size: 18px;
+            color: #FF6600;
+            text-transform: uppercase;
+        }
+
+        /* Achievement Notification */
+        .achievement {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 40px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.95), rgba(255,140,0,0.95));
+            border: 3px solid #FFD700;
+            border-radius: 20px;
+            color: #8B0000;
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 500;
+            animation: achievementPop 2s forwards;
+            pointer-events: none;
+        }
+
+        @keyframes achievementPop {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(-180deg); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2) rotate(10deg); opacity: 1; }
+            70% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0; }
+        }
+
+        /* Screen Shake */
+        @keyframes screenShake {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-5px, -5px); }
+            20% { transform: translate(5px, -5px); }
+            30% { transform: translate(-5px, 5px); }
+            40% { transform: translate(5px, 5px); }
+            50% { transform: translate(-3px, -3px); }
+            60% { transform: translate(3px, -3px); }
+            70% { transform: translate(-3px, 3px); }
+            80% { transform: translate(3px, 3px); }
+            90% { transform: translate(-1px, -1px); }
+        }
+
+        .shake {
+            animation: screenShake 0.5s;
+        }
+
+        /* Initial Loading Screen */
+        #initialLoadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(ellipse at center, #8B0000 0%, #510200 50%, #2A0000 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 500;
+            animation: bgPulse 3s infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% {
+                background: radial-gradient(ellipse at center, #8B0000 0%, #510200 50%, #2A0000 100%);
+            }
+            50% {
+                background: radial-gradient(ellipse at center, #B00000 0%, #710400 50%, #3A0000 100%);
+            }
+        }
+
+        .fireTitle {
+            font-size: 96px;
+            font-family: 'Bebas Neue', cursive;
+            color: #FFD700;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+            text-shadow: 
+                0 0 10px #FF6600,
+                0 0 20px #FF6600,
+                0 0 30px #FF3300,
+                0 0 40px #FF3300,
+                0 0 50px #FF0000,
+                0 0 60px #FF0000,
+                0 0 70px #FF0000,
+                4px 4px 0px #8B0000,
+                6px 6px 10px rgba(0,0,0,0.9);
+            animation: fireFlicker 2s infinite, titleFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes fireFlicker {
+            0%, 100% {
+                opacity: 1;
+                text-shadow: 
+                    0 0 10px #FF6600,
+                    0 0 20px #FF6600,
+                    0 0 30px #FF3300,
+                    0 0 40px #FF3300,
+                    0 0 50px #FF0000,
+                    0 0 60px #FF0000,
+                    0 0 70px #FF0000,
+                    4px 4px 0px #8B0000,
+                    6px 6px 10px rgba(0,0,0,0.9);
+            }
+            50% {
+                opacity: 0.95;
+                text-shadow: 
+                    0 0 15px #FFAA00,
+                    0 0 25px #FF9900,
+                    0 0 35px #FF6600,
+                    0 0 45px #FF6600,
+                    0 0 55px #FF3300,
+                    0 0 65px #FF3300,
+                    0 0 75px #FF3300,
+                    4px 4px 0px #8B0000,
+                    6px 6px 15px rgba(0,0,0,0.9);
+            }
+        }
+
+        @keyframes titleFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .fireSubtitle {
+            font-size: 28px;
+            font-family: 'Russo One', sans-serif;
+            color: #FF9900;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 50px;
+            opacity: 0.9;
+            text-shadow: 
+                0 0 10px #FF6600,
+                2px 2px 0px #8B0000,
+                3px 3px 8px rgba(0,0,0,0.9);
+            animation: subtitlePulse 2s infinite;
+        }
+
+        @keyframes subtitlePulse {
+            0%, 100% { opacity: 0.9; }
+            50% { opacity: 1; }
+        }
+
+        .clickPrompt {
+            font-size: 36px;
+            font-family: 'Bebas Neue', cursive;
+            letter-spacing: 3px;
+            animation: fireGlow 2s infinite, bounce 1s infinite;
+            color: #FFD700;
+            background: linear-gradient(135deg, rgba(139,0,0,0.9), rgba(81,2,0,0.9));
+            padding: 25px 50px;
+            border: 3px solid #FF6600;
+            border-radius: 15px;
+            box-shadow: 
+                0 0 30px rgba(255, 100, 0, 0.8), 
+                inset 0 0 20px rgba(255, 200, 0, 0.3),
+                0 5px 15px rgba(0,0,0,0.5);
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .clickPrompt::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 200, 0.4), 
+                transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-5px) scale(1.02); }
+        }
+
+        .clickPrompt:hover {
+            transform: scale(1.1);
+            box-shadow: 
+                0 0 50px rgba(255, 100, 0, 1), 
+                inset 0 0 30px rgba(255, 200, 0, 0.4),
+                0 8px 20px rgba(0,0,0,0.6);
+            border-color: #FFAA00;
+        }
+
+        .clickPrompt:active {
+            transform: scale(0.95);
+        }
+
+        .flameAnimation {
+            position: absolute;
+            width: 100%;
+            height: 200px;
+            bottom: 0;
+            left: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .flame {
+            position: absolute;
+            bottom: -50px;
+            width: 80px;
+            height: 150px;
+            background: linear-gradient(to top, 
+                rgba(255, 100, 0, 0.8),
+                rgba(255, 200, 0, 0.6),
+                transparent);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            animation: flameMove 3s infinite;
+            filter: blur(2px);
+        }
+
+        @keyframes flameMove {
+            0%, 100% {
+                transform: translateY(0) scale(1) rotate(-5deg);
+                opacity: 0.8;
+            }
+            25% {
+                transform: translateY(-20px) scale(1.1) rotate(5deg);
+                opacity: 0.9;
+            }
+            50% {
+                transform: translateY(-10px) scale(0.95) rotate(-3deg);
+                opacity: 0.85;
+            }
+            75% {
+                transform: translateY(-30px) scale(1.05) rotate(3deg);
+                opacity: 0.95;
+            }
+        }
+
+        .loadingDots {
+            font-size: 48px;
+            color: #FFD700;
+            margin-top: 30px;
+            display: none;
+        }
+
+        .loadingDots span {
+            animation: dotPulse 1.5s infinite;
+            display: inline-block;
+            margin: 0 5px;
+        }
+
+        .loadingDots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loadingDots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.7;
+            }
+        }
+
+        /* Video Loading Screen (Modified) */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(ellipse at center, #8B0000 0%, #510200 50%, #2A0000 100%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 200;
+        }
+
+        #endingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(ellipse at center, #8B0000 0%, #510200 50%, #2A0000 100%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 300;
+        }
+
+        #loadingVideo, #endingVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: scale-down;
+            filter: brightness(1.2) contrast(1.1);
+        }
+        
+        #startPrompt, #restartPrompt {
+            position: absolute;
+            bottom: 80px;
+            font-size: 32px;
+            font-family: 'Bebas Neue', cursive;
+            letter-spacing: 3px;
+            animation: fireGlow 2s infinite, pulse 1.5s infinite;
+            color: #FFD700;
+            background: linear-gradient(135deg, rgba(139,0,0,0.9), rgba(81,2,0,0.9));
+            padding: 20px 40px;
+            border: 2px solid #FF6600;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 100, 0, 0.8), inset 0 0 20px rgba(255, 200, 0, 0.3);
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #startPrompt:hover, #restartPrompt:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(255, 100, 0, 1), inset 0 0 25px rgba(255, 200, 0, 0.4);
+        }
+
+        #startPrompt:active, #restartPrompt:active {
+            transform: scale(0.95);
+        }
+        
+        @keyframes fireGlow {
+            0%, 100% { 
+                text-shadow: 0 0 20px #FF6600, 0 0 40px #FF3300, 0 0 60px #FF0000;
+            }
+            50% { 
+                text-shadow: 0 0 30px #FF9900, 0 0 50px #FF6600, 0 0 70px #FF3300;
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        #score {
+            font-size: 32px;
+            font-family: 'Bebas Neue', cursive;
+            color: #FFD700;
+            text-shadow: 3px 3px 0px #8B0000, 
+                        5px 5px 10px rgba(0,0,0,0.8),
+                        0 0 30px rgba(255, 100, 0, 0.8);
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(139,0,0,0.9), rgba(81,2,0,0.9));
+            padding: 12px 25px;
+            border-radius: 15px;
+            border: 2px solid #FF6600;
+            box-shadow: 0 0 20px rgba(255, 100, 0, 0.5);
+            letter-spacing: 2px;
+        }
+        
+        #finalScore {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 64px;
+            font-family: 'Bebas Neue', cursive;
+            color: #FFD700;
+            text-shadow: 4px 4px 0px #FF6600,
+                        6px 6px 0px #FF3300,
+                        8px 8px 20px rgba(0,0,0,0.9),
+                        0 0 40px rgba(255, 200, 0, 0.8);
+            z-index: 310;
+            display: none;
+            letter-spacing: 3px;
+            animation: fireGlow 2s infinite;
+        }
+
+        #newHighScore {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            font-family: 'Bebas Neue', cursive;
+            color: #00FF00;
+            text-shadow: 2px 2px 0px #00AA00,
+                        4px 4px 10px rgba(0,0,0,0.9);
+            display: none;
+            animation: newHighScorePulse 1s infinite;
+        }
+
+        @keyframes newHighScorePulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+        
+        #debugInfo {
+            position: absolute;
+            top: 200px;
+            left: 30px;
+            font-size: 14px;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+            z-index: 100;
+            display: none;
+            background: rgba(81, 2, 0, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .gameTitle {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            font-family: 'Bebas Neue', cursive;
+            color: #FFD700;
+            text-shadow: 4px 4px 0px #FF6600,
+                        6px 6px 0px #FF3300,
+                        8px 8px 20px rgba(0,0,0,0.9),
+                        0 0 60px rgba(255, 100, 0, 0.8);
+            letter-spacing: 5px;
+            animation: fireGlow 2s infinite;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Game HUD -->
+        <div id="gameHUD">
+            <div id="score" class="hudElement">Score: 0</div>
+            <div id="highScore" class="hudElement">Best: 0</div>
+            <div id="comboDisplay" class="hudElement">Combo x1</div>
+            <div id="difficultyIndicator" class="hudElement">Level 1</div>
+            <div id="powerUpIndicator">⚡</div>
+        </div>
+        
+        <div id="debugInfo">Debug Mode: Press D to toggle hitbox</div>
+        <canvas id="canvas" width="800" height="600"></canvas>
+        
+        <!-- Initial Loading Screen -->
+        <div id="initialLoadingScreen">
+            <div class="fireTitle">Fire Wall</div>
+            <div class="fireSubtitle">Challenge Your Limits</div>
+            <div class="clickPrompt">Click or Press Any Key to Continue</div>
+            <div class="loadingDots">
+                <span>🔥</span>
+                <span>🔥</span>
+                <span>🔥</span>
+            </div>
+            <div class="flameAnimation">
+                <div class="flame" style="left: 10%; animation-delay: 0s;"></div>
+                <div class="flame" style="left: 25%; animation-delay: 0.5s;"></div>
+                <div class="flame" style="left: 40%; animation-delay: 1s;"></div>
+                <div class="flame" style="left: 55%; animation-delay: 1.5s;"></div>
+                <div class="flame" style="left: 70%; animation-delay: 2s;"></div>
+                <div class="flame" style="left: 85%; animation-delay: 2.5s;"></div>
+            </div>
+        </div>
+        
+        <!-- Video Loading Screen -->
+        <div id="loadingScreen">
+            <div class="gameTitle">Fire Wall Challenge</div>
+            <video id="loadingVideo" loop muted preload="auto">
+                <source src="loading-video.mp4" type="video/mp4">
+            </video>
+            <div id="startPrompt">Press ENTER to Start</div>
+        </div>
+        
+        <div id="endingScreen">
+            <video id="endingVideo">
+                <source src="ending_vid.mp4" type="video/mp4">
+            </video>
+            <div id="finalScore">Final Score: 0</div>
+            <div id="newHighScore">🏆 NEW HIGH SCORE! 🏆</div>
+            <div id="restartPrompt" style="display: none;">Press ENTER to Restart</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const initialLoadingScreen = document.getElementById('initialLoadingScreen');
+        const loadingScreen = document.getElementById('loadingScreen');
+        const endingScreen = document.getElementById('endingScreen');
+        const endingVideo = document.getElementById('endingVideo');
+        const loadingVideo = document.getElementById('loadingVideo');
+        const clickPrompt = document.querySelector('.clickPrompt');
+        const loadingDots = document.querySelector('.loadingDots');
+        const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('highScore');
+        const comboDisplay = document.getElementById('comboDisplay');
+        const powerUpIndicator = document.getElementById('powerUpIndicator');
+        const difficultyIndicator = document.getElementById('difficultyIndicator');
+        const finalScoreElement = document.getElementById('finalScore');
+        const newHighScoreElement = document.getElementById('newHighScore');
+        const restartPrompt = document.getElementById('restartPrompt');
+        const debugInfo = document.getElementById('debugInfo');
+        const gameHUD = document.getElementById('gameHUD');
+
+        startPrompt.addEventListener('click', startGame);
+        restartPrompt.addEventListener('click', restartGame);
+        
+        let gameStarted = false;
+        let gameOver = false;
+        let showingEndingVideo = false;
+        let score = 0;
+        let highScore = localStorage.getItem('fireWallHighScore') || 0;
+        let animationId;
+        let debugMode = false;
+        let frameCount = 0;
+        let audioEnabled = false;
+        
+        let combo = 1;
+        let comboTimer = 0;
+        let nearMissCount = 0;
+        let perfectJumpCount = 0;
+        let currentLevel = 1;
+        let baseSpeed = 3;
+        let speedMultiplier = 1;
+        let powerUps = [];
+        let explosionParticles = [];
+        let backgroundLayers = [];
+        let achievements = [];
+        let totalJumps = 0;
+        let consecutivePasses = 0;
+        let invincibleTimer = 0;
+        let doublePointsTimer = 0;
+        let slowMotionTimer = 0;
+        
+        highScoreElement.textContent = `Best: ${highScore}`;
+        
+        function handleInitialInteraction() {
+            if (!audioEnabled) {
+                audioEnabled = true;
+                
+                clickPrompt.style.display = 'none';
+                loadingDots.style.display = 'block';
+                
+                audio.jump.load();
+                audio.hit.load();
+                audio.background.load();
+                audio.powerUp.load();
+                audio.achievement.load();
+                audio.whoosh.load();
+                
+                loadingVideo.muted = false;
+                loadingVideo.volume = 1;
+                loadingVideo.play().then(() => {
+                    setTimeout(() => {
+                        initialLoadingScreen.style.display = 'none';
+                        loadingScreen.style.display = 'flex';
+                        loadingVideo.play(); 
+                    }, 1000);
+                }).catch(err => {
+                    console.log('Video play failed:', err);
+                   
+                    setTimeout(() => {
+                        initialLoadingScreen.style.display = 'none';
+                        loadingScreen.style.display = 'flex';
+                    }, 1000);
+                });
+            }
+        }
+        
+        initialLoadingScreen.addEventListener('click', handleInitialInteraction);
+        document.addEventListener('keydown', function initialKeyHandler(e) {
+            if (initialLoadingScreen.style.display !== 'none') {
+                handleInitialInteraction();
+            }
+        });
+        
+        const player = {
+            x: 100,
+            y: 300,
+            imageSize: 200,
+            velocity: 0,
+            gravity: 0.6,
+            jump: -14,
+            currentImage: 'normal',
+            jumpAnimationTimer: 0,
+            rotation: 0,
+            invincible: false,
+            doubleJumpAvailable: false,
+            hasDoubleJumped: false,
+            images: {
+                normal: new Image(),
+                jumping: new Image(),
+                crashed: new Image()
+            },
+            getHitbox: function() {
+                const offsetPercentage = 0.25;
+                const actualSizePercentage = 0.4;
+
+                return {
+                    x: this.x + (this.imageSize * offsetPercentage),
+                    y: this.y + (this.imageSize * offsetPercentage),
+                    width: this.imageSize * actualSizePercentage,
+                    height: this.imageSize * actualSizePercentage
+                };
+            }
+        };
+        
+        player.images.normal.src = 'amitabh.png';
+        player.images.jumping.src = 'amitabh2.png';
+        player.images.crashed.src = 'amitabh3.png';
+        
+        const fireWalls = [];
+        let fireWallGap = 520;
+        let fireWallSpeed = baseSpeed;
+        
+        const fireParticles = [];
+        const emberParticles = [];
+        const smokeParticles = [];
+        const borderFlames = [];
+        
+        const audio = {
+            jump: new Audio('aag.mp3'),
+            hit: new Audio('mkb.mp3'),
+            background: new Audio('firewall.mp3'),
+            powerUp: new Audio('aag.mp3'), 
+            achievement: new Audio('aag.mp3'), 
+            whoosh: new Audio('aag.mp3') 
+        };
+
+        audio.jump.volume = 0.5;
+        audio.hit.volume = 0.5;
+        audio.background.volume = 0.9;
+        audio.background.loop = true;
+        audio.powerUp.volume = 0.4;
+        audio.achievement.volume = 0.6;
+        audio.whoosh.volume = 0.3;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if(gameStarted && !gameOver) {
+                player.x = canvas.width * 0.15;
+            }
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        class PowerUp {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.types = ['shield', 'slowmo', 'double', 'points'];
+                this.type = this.types[Math.floor(Math.random() * this.types.length)];
+                this.size = 40;
+                this.collected = false;
+                this.rotation = 0;
+                this.bobOffset = Math.random() * Math.PI * 2;
+                
+                this.icons = {
+                    shield: '🛡️',
+                    slowmo: '⏰',
+                    double: '💎',
+                    points: '⭐'
+                };
+            }
+            
+            update() {
+                this.x -= fireWallSpeed;
+                this.rotation += 0.05;
+                this.y += Math.sin(frameCount * 0.05 + this.bobOffset) * 2;
+            }
+            
+            draw() {
+                if (this.collected) return;
+                
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                
+                const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size * 1.5);
+                glowGradient.addColorStop(0, 'rgba(255, 215, 0, 0.6)');
+                glowGradient.addColorStop(0.5, 'rgba(255, 150, 0, 0.3)');
+                glowGradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+                
+                ctx.fillStyle = glowGradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size * 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
+                gradient.addColorStop(0, 'rgba(255, 255, 200, 1)');
+                gradient.addColorStop(0.7, 'rgba(255, 200, 0, 1)');
+                gradient.addColorStop(1, 'rgba(255, 100, 0, 1)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.font = '30px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.icons[this.type], 0, 0);
+                
+                ctx.restore();
+            }
+            
+            checkCollection() {
+                const playerCenterX = player.x + player.imageSize / 2;
+                const playerCenterY = player.y + player.imageSize / 2;
+                
+                const distance = Math.sqrt(
+                    Math.pow(playerCenterX - this.x, 2) +
+                    Math.pow(playerCenterY - this.y, 2)
+                );
+                
+                if (distance < this.size + player.imageSize / 4 && !this.collected) {
+                    this.collected = true;
+                    this.activate();
+                    audio.powerUp.currentTime = 0;
+                    audio.powerUp.play();
+                    
+                    for(let i = 0; i < 20; i++) {
+                        explosionParticles.push(new ExplosionParticle(this.x, this.y, 'gold'));
+                    }
+                }
+            }
+            
+            activate() {
+                switch(this.type) {
+                    case 'shield':
+                        invincibleTimer = 300; 
+                        showNotification('INVINCIBILITY!', '#00FF00');
+                        break;
+                    case 'slowmo':
+                        slowMotionTimer = 300;
+                        showNotification('SLOW MOTION!', '#00FFFF');
+                        break;
+                    case 'double':
+                        doublePointsTimer = 600; 
+                        showNotification('DOUBLE POINTS!', '#FFD700');
+                        break;
+                    case 'points':
+                        const bonus = 5 * combo;
+                        score += bonus;
+                        showNotification(`+${bonus} POINTS!`, '#FFFF00');
+                        break;
+                }
+            }
+        }
+        
+        class ExplosionParticle {
+            constructor(x, y, color = 'red') {
+                this.x = x;
+                this.y = y;
+                this.speedX = (Math.random() - 0.5) * 15;
+                this.speedY = (Math.random() - 0.5) * 15;
+                this.size = Math.random() * 10 + 5;
+                this.life = 1;
+                this.color = color;
+                this.gravity = 0.3;
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedY += this.gravity;
+                this.life -= 0.02;
+                this.size *= 0.98;
+                this.speedX *= 0.98;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                if (this.color === 'gold') {
+                    gradient.addColorStop(0, 'rgba(255, 255, 200, 1)');
+                    gradient.addColorStop(0.5, 'rgba(255, 200, 0, 0.8)');
+                    gradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+                } else {
+                    gradient.addColorStop(0, 'rgba(255, 255, 100, 1)');
+                    gradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.8)');
+                    gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+                }
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+        
+        class BackgroundLayer {
+            constructor(speed, opacity, particles) {
+                this.speed = speed;
+                this.opacity = opacity;
+                this.particles = [];
+                
+                for(let i = 0; i < particles; i++) {
+                    this.particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: Math.random() * 3 + 1,
+                        speedX: speed,
+                        brightness: Math.random()
+                    });
+                }
+            }
+            
+            update() {
+                this.particles.forEach(p => {
+                    p.x -= p.speedX;
+                    if(p.x < -10) {
+                        p.x = canvas.width + 10;
+                        p.y = Math.random() * canvas.height;
+                    }
+                    p.brightness = 0.5 + Math.sin(frameCount * 0.05) * 0.5;
+                });
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                
+                this.particles.forEach(p => {
+                    ctx.fillStyle = `rgba(255, ${100 + p.brightness * 100}, 0, ${p.brightness})`;
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                });
+                
+                ctx.restore();
+            }
+        }
+        
+        class FireParticle {
+            constructor(x, y, type = 'normal', direction = 'up') {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.direction = direction;
+                this.size = type === 'large' ? Math.random() * 30 + 20 : Math.random() * 20 + 10;
+                this.speedX = (Math.random() - 0.5) * 4;
+                this.speedY = Math.random() * -6 - 3;
+                this.color = this.getFireColor();
+                this.life = 1;
+                this.flickerSpeed = Math.random() * 0.1 + 0.05;
+            }
+            
+            getFireColor() {
+                const colors = [
+                    `hsl(0, 100%, ${Math.random() * 30 + 50}%)`,
+                    `hsl(${Math.random() * 15}, 100%, ${Math.random() * 30 + 55}%)`,
+                    `hsl(10, 100%, ${Math.random() * 30 + 45}%)`
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            update() {
+                this.x += this.speedX + Math.sin(frameCount * this.flickerSpeed) * 0.8;
+                this.y += this.speedY;
+                this.life -= this.type === 'building' ? 0.008 : 0.015;
+                this.size *= 0.98;
+                this.speedY += 0.1;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life * (0.8 + Math.sin(frameCount * this.flickerSpeed) * 0.2);
+                
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                gradient.addColorStop(0, 'rgba(255, 255, 100, 1)');
+                gradient.addColorStop(0.2, this.color);
+                gradient.addColorStop(1, 'rgba(139, 0, 0, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        class EmberParticle {
+            constructor(x, y, direction = 'up') {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 6 + 2;
+                this.speedX = (Math.random() - 0.5) * 6;
+                this.speedY = Math.random() * -8 - 3;
+                this.life = 1;
+                this.gravity = 0.15;
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedY += this.gravity;
+                this.life -= 0.01;
+                this.size *= 0.99;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#FF0000';
+                ctx.fillStyle = `hsl(${Math.random() * 20}, 100%, ${50 + this.life * 50}%)`;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+                ctx.restore();
+            }
+        }
+        
+        class FireWall {
+            constructor(x) {
+                this.x = x;
+                this.width = 80;
+                this.topHeight = Math.random() * (canvas.height * 0.3) + 100;
+                this.bottomY = this.topHeight + fireWallGap;
+                this.passed = false;
+                this.nearMissChecked = false;
+                this.flamePhase = Math.random() * Math.PI * 2;
+                
+                if (currentLevel > 3 && Math.random() > 0.7) {
+                    this.isMoving = true;
+                    this.moveSpeed = Math.random() * 2 + 1;
+                    this.moveDirection = Math.random() > 0.5 ? 1 : -1;
+                } else {
+                    this.isMoving = false;
+                }
+            }
+            
+            update() {
+                this.x -= fireWallSpeed;
+                this.flamePhase += 0.08;
+                
+                if (this.isMoving) {
+                    this.topHeight += this.moveSpeed * this.moveDirection;
+                    this.bottomY = this.topHeight + fireWallGap;
+                    
+                    if (this.topHeight < 50 || this.topHeight > canvas.height * 0.4) {
+                        this.moveDirection *= -1;
+                    }
+                }
+                
+                if (!this.nearMissChecked && Math.abs(this.x - (player.x + player.imageSize/2)) < 50) {
+                    const hitbox = player.getHitbox();
+                    const topDistance = Math.abs(hitbox.y - this.topHeight);
+                    const bottomDistance = Math.abs((hitbox.y + hitbox.height) - this.bottomY);
+                    
+                    if (topDistance < 30 || bottomDistance < 30) {
+                        this.nearMissChecked = true;
+                        nearMissCount++;
+                        const bonus = 2 * combo;
+                        score += bonus;
+                        showNotification(`NEAR MISS! +${bonus}`, '#00FFFF');
+                    }
+                }
+                
+                for(let i = 0; i < 8; i++) {
+                    fireParticles.push(new FireParticle(
+                        this.x - this.width/2 + Math.random() * this.width,
+                        this.topHeight - 10,
+                        'building',
+                        'up'
+                    ));
+                    
+                    fireParticles.push(new FireParticle(
+                        this.x - this.width/2 + Math.random() * this.width,
+                        this.bottomY + 10,
+                        'building',
+                        'up'
+                    ));
+                    
+                    if(Math.random() > 0.5) {
+                        emberParticles.push(new EmberParticle(
+                            this.x + (Math.random() - 0.5) * this.width,
+                            this.topHeight,
+                            'up'
+                        ));
+                        emberParticles.push(new EmberParticle(
+                            this.x + (Math.random() - 0.5) * this.width,
+                            this.bottomY,
+                            'up'
+                        ));
+                    }
+                }
+            }
+            
+            draw() {
+                ctx.save();
+                
+                const wobble = this.isMoving ? Math.sin(this.flamePhase * 2) * 5 : 0;
+                
+                const topGradient = ctx.createLinearGradient(this.x - this.width/2, 0, this.x + this.width/2, 0);
+                topGradient.addColorStop(0, '#2A0000');
+                topGradient.addColorStop(0.5, this.isMoving ? '#FF0000' : '#8B0000');
+                topGradient.addColorStop(1, '#2A0000');
+                
+                ctx.fillStyle = topGradient;
+                ctx.fillRect(this.x - this.width/2 + wobble, 0, this.width, this.topHeight);
+                
+                const fireGradient = ctx.createLinearGradient(this.x, 0, this.x, this.topHeight);
+                fireGradient.addColorStop(0, 'rgba(139, 0, 0, 0.9)');
+                fireGradient.addColorStop(0.5, 'rgba(255, 0, 0, 0.7)');
+                fireGradient.addColorStop(1, 'rgba(255, 100, 0, 1)');
+                
+                ctx.fillStyle = fireGradient;
+                ctx.globalAlpha = 0.8 + Math.sin(this.flamePhase) * 0.2;
+                ctx.fillRect(this.x - this.width/2 + wobble, 0, this.width, this.topHeight);
+                
+                for(let i = 0; i < 5; i++) {
+                    const offset = Math.sin(this.flamePhase + i * 0.8) * 20;
+                    const flameHeight = 60 + Math.sin(this.flamePhase + i) * 30;
+                    
+                    const flameGrad = ctx.createLinearGradient(
+                        this.x + offset, this.topHeight + flameHeight,
+                        this.x + offset, this.topHeight
+                    );
+                    flameGrad.addColorStop(0, 'rgba(255, 0, 0, 0)');
+                    flameGrad.addColorStop(0.3, 'rgba(255, 100, 0, 0.5)');
+                    flameGrad.addColorStop(0.7, 'rgba(255, 200, 0, 0.8)');
+                    flameGrad.addColorStop(1, 'rgba(255, 255, 200, 1)');
+                    
+                    ctx.fillStyle = flameGrad;
+                    ctx.globalAlpha = 0.9;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.x - this.width/2 + i * 20 + wobble, this.topHeight);
+                    ctx.quadraticCurveTo(
+                        this.x - this.width/2 + i * 20 + offset + wobble,
+                        this.topHeight - flameHeight/2,
+                        this.x - this.width/2 + i * 20 + offset/2 + wobble,
+                        this.topHeight - flameHeight
+                    );
+                    ctx.quadraticCurveTo(
+                        this.x - this.width/2 + i * 20 + 20 + offset + wobble,
+                        this.topHeight - flameHeight/2,
+                        this.x - this.width/2 + i * 20 + 20 + wobble,
+                        this.topHeight
+                    );
+                    ctx.fill();
+                }
+                
+                const bottomGradient = ctx.createLinearGradient(this.x - this.width/2, this.bottomY, this.x + this.width/2, this.bottomY);
+                bottomGradient.addColorStop(0, '#2A0000');
+                bottomGradient.addColorStop(0.5, this.isMoving ? '#FF0000' : '#8B0000');
+                bottomGradient.addColorStop(1, '#2A0000');
+                
+                ctx.fillStyle = bottomGradient;
+                ctx.globalAlpha = 1;
+                ctx.fillRect(this.x - this.width/2 + wobble, this.bottomY, this.width, canvas.height - this.bottomY);
+                
+                const fireGradient2 = ctx.createLinearGradient(this.x, canvas.height, this.x, this.bottomY);
+                fireGradient2.addColorStop(0, 'rgba(139, 0, 0, 0.9)');
+                fireGradient2.addColorStop(0.5, 'rgba(255, 0, 0, 0.7)');
+                fireGradient2.addColorStop(1, 'rgba(255, 100, 0, 1)');
+                
+                ctx.fillStyle = fireGradient2;
+                ctx.globalAlpha = 0.8 + Math.cos(this.flamePhase) * 0.2;
+                ctx.fillRect(this.x - this.width/2 + wobble, this.bottomY, this.width, canvas.height - this.bottomY);
+                
+                for(let i = 0; i < 5; i++) {
+                    const offset = Math.cos(this.flamePhase + i * 0.8) * 20;
+                    const flameHeight = 60 + Math.cos(this.flamePhase + i) * 30;
+                    
+                    const flameGrad = ctx.createLinearGradient(
+                        this.x + offset, this.bottomY - flameHeight,
+                        this.x + offset, this.bottomY
+                    );
+                    flameGrad.addColorStop(0, 'rgba(255, 0, 0, 0)');
+                    flameGrad.addColorStop(0.3, 'rgba(255, 100, 0, 0.5)');
+                    flameGrad.addColorStop(0.7, 'rgba(255, 200, 0, 0.8)');
+                    flameGrad.addColorStop(1, 'rgba(255, 255, 200, 1)');
+                    
+                    ctx.fillStyle = flameGrad;
+                    ctx.globalAlpha = 0.9;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.x - this.width/2 + i * 20 + wobble, this.bottomY);
+                    ctx.quadraticCurveTo(
+                        this.x - this.width/2 + i * 20 + offset + wobble,
+                        this.bottomY - flameHeight/2,
+                        this.x - this.width/2 + i * 20 + offset/2 + wobble,
+                        this.bottomY - flameHeight
+                    );
+                    ctx.quadraticCurveTo(
+                        this.x - this.width/2 + i * 20 + 20 + offset + wobble,
+                        this.bottomY - flameHeight/2,
+                        this.x - this.width/2 + i * 20 + 20 + wobble,
+                        this.bottomY
+                    );
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+                
+                if(debugMode) {
+                    ctx.strokeStyle = this.isMoving ? 'yellow' : 'cyan';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(this.x - this.width/2, 0, this.width, this.topHeight);
+                    ctx.strokeRect(this.x - this.width/2, this.bottomY, this.width, canvas.height - this.bottomY);
+                }
+            }
+        }
+        
+        function createBorderFlames() {
+            for(let i = 0; i < 3; i++) {
+                borderFlames.push(new FireParticle(
+                    Math.random() * canvas.width,
+                    Math.random() * 30,
+                    'border'
+                ));
+            }
+            
+            for(let i = 0; i < 3; i++) {
+                borderFlames.push(new FireParticle(
+                    Math.random() * canvas.width,
+                    canvas.height - Math.random() * 30,
+                    'border'
+                ));
+            }
+        }
+        
+        function drawBackground() {
+            const bgGradient = ctx.createRadialGradient(
+                canvas.width/2, canvas.height/2, 0,
+                canvas.width/2, canvas.height/2, canvas.width/2
+            );
+            bgGradient.addColorStop(0, '#8B0000');
+            bgGradient.addColorStop(0.5, '#510200');
+            bgGradient.addColorStop(1, '#2A0000');
+            
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            backgroundLayers.forEach(layer => {
+                layer.update();
+                layer.draw();
+            });
+            
+            ctx.save();
+            ctx.globalAlpha = 0.1 + Math.sin(frameCount * 0.02) * 0.05;
+            const glowGradient = ctx.createRadialGradient(
+                canvas.width/2, canvas.height/2, 0,
+                canvas.width/2, canvas.height/2, canvas.width
+            );
+            glowGradient.addColorStop(0, '#FF6600');
+            glowGradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = glowGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+            
+            drawFireBorders();
+        }
+        
+        function drawFireBorders() {
+            ctx.save();
+            
+            for(let x = 0; x < canvas.width; x += 50) {
+                const flameHeight = 80 + Math.sin((x + frameCount * 2) * 0.02) * 30;
+                const gradient = ctx.createLinearGradient(x, 0, x, flameHeight);
+                gradient.addColorStop(0, '#510200');
+                gradient.addColorStop(0.3, '#FF0000');
+                gradient.addColorStop(0.6, '#FF6600');
+                gradient.addColorStop(1, 'rgba(255, 200, 0, 0.2)');
+                
+                ctx.fillStyle = gradient;
+                ctx.globalAlpha = 0.7 + Math.sin((x + frameCount * 3) * 0.03) * 0.3;
+                
+                ctx.beginPath();
+                ctx.moveTo(x - 25, 0);
+                ctx.quadraticCurveTo(
+                    x + Math.sin(frameCount * 0.05 + x * 0.01) * 20,
+                    flameHeight/2,
+                    x + Math.sin(frameCount * 0.03 + x * 0.02) * 10,
+                    flameHeight
+                );
+                ctx.quadraticCurveTo(
+                    x + 25 + Math.cos(frameCount * 0.04 + x * 0.01) * 20,
+                    flameHeight/2,
+                    x + 50,
+                    0
+                );
+                ctx.fill();
+            }
+            
+            for(let x = 0; x < canvas.width; x += 50) {
+                const flameHeight = 80 + Math.sin((x - frameCount * 2) * 0.02) * 30;
+                const gradient = ctx.createLinearGradient(x, canvas.height, x, canvas.height - flameHeight);
+                gradient.addColorStop(0, '#510200');
+                gradient.addColorStop(0.3, '#FF0000');
+                gradient.addColorStop(0.6, '#FF6600');
+                gradient.addColorStop(1, 'rgba(255, 200, 0, 0.2)');
+                
+                ctx.fillStyle = gradient;
+                ctx.globalAlpha = 0.7 + Math.sin((x - frameCount * 3) * 0.03) * 0.3;
+                
+                ctx.beginPath();
+                ctx.moveTo(x - 25, canvas.height);
+                ctx.quadraticCurveTo(
+                    x + Math.sin(frameCount * 0.05 + x * 0.01) * 20,
+                    canvas.height - flameHeight/2,
+                    x + Math.sin(frameCount * 0.03 + x * 0.02) * 10,
+                    canvas.height - flameHeight
+                );
+                ctx.quadraticCurveTo(
+                    x + 25 + Math.cos(frameCount * 0.04 + x * 0.01) * 20,
+                    canvas.height - flameHeight/2,
+                    x + 50,
+                    canvas.height
+                );
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+        
+        function init() {
+            score = 0;
+            frameCount = 0;
+            combo = 1;
+            comboTimer = 0;
+            nearMissCount = 0;
+            perfectJumpCount = 0;
+            currentLevel = 1;
+            speedMultiplier = 1;
+            fireWallSpeed = baseSpeed;
+            fireWallGap = 320;
+            totalJumps = 0;
+            consecutivePasses = 0;
+            invincibleTimer = 0;
+            doublePointsTimer = 0;
+            slowMotionTimer = 0;
+            
+            player.x = canvas.width * 0.15;
+            player.y = canvas.height * 0.5;
+            player.velocity = 0;
+            player.currentImage = 'normal';
+            player.jumpAnimationTimer = 0;
+            player.rotation = 0;
+            player.invincible = false;
+            player.doubleJumpAvailable = false;
+            player.hasDoubleJumped = false;
+            
+            fireWalls.length = 0;
+            fireParticles.length = 0;
+            emberParticles.length = 0;
+            borderFlames.length = 0;
+            powerUps.length = 0;
+            explosionParticles.length = 0;
+            
+            backgroundLayers = [
+                new BackgroundLayer(0.5, 0.3, 20),
+                new BackgroundLayer(1, 0.2, 30),
+                new BackgroundLayer(1.5, 0.1, 40)
+            ];
+            
+            gameOver = false;
+            showingEndingVideo = false;
+            scoreElement.textContent = 'Score: 0';
+            comboDisplay.textContent = 'Combo x1';
+            comboDisplay.classList.remove('active');
+            difficultyIndicator.textContent = 'Level 1';
+        }
+        
+        function updateDifficulty() {
+            const oldLevel = currentLevel;
+            currentLevel = Math.floor(score / 10) + 1;
+            
+            if (currentLevel > oldLevel) {
+                showAchievement(`LEVEL ${currentLevel}!`);
+                audio.achievement.play();
+                
+                speedMultiplier = 1 + (currentLevel - 1) * 0.15;
+                fireWallSpeed = baseSpeed * speedMultiplier;
+                
+                fireWallGap = Math.max(250, 320 - (currentLevel - 1) * 10);
+                
+                difficultyIndicator.textContent = `Level ${currentLevel}`;
+                
+                canvas.classList.add('shake');
+                setTimeout(() => canvas.classList.remove('shake'), 500);
+            }
+        }
+        
+        function showNotification(text, color = '#FFD700') {
+            const notification = document.createElement('div');
+            notification.style.position = 'absolute';
+            notification.style.top = '50%';
+            notification.style.left = '50%';
+            notification.style.transform = 'translate(-50%, -50%)';
+            notification.style.color = color;
+            notification.style.fontSize = '24px';
+            notification.style.fontWeight = 'bold';
+            notification.style.textShadow = '2px 2px 4px rgba(0,0,0,0.8)';
+            notification.style.zIndex = '400';
+            notification.style.pointerEvents = 'none';
+            notification.style.animation = 'achievementPop 1s forwards';
+            notification.textContent = text;
+            
+            document.getElementById('gameContainer').appendChild(notification);
+            setTimeout(() => notification.remove(), 1000);
+        }
+        
+        function showAchievement(text) {
+            const achievement = document.createElement('div');
+            achievement.className = 'achievement';
+            achievement.innerHTML = `🏆 ${text} 🏆`;
+            document.getElementById('gameContainer').appendChild(achievement);
+            setTimeout(() => achievement.remove(), 2000);
+        }
+        
+        function updateCombo() {
+            if (comboTimer > 0) {
+                comboTimer--;
+            } else {
+                if (combo > 1) {
+                    combo = 1;
+                    comboDisplay.textContent = 'Combo x1';
+                    comboDisplay.classList.remove('active');
+                }
+            }
+        }
+        
+        function triggerCombo() {
+            combo++;
+            comboTimer = 180; 
+            comboDisplay.textContent = `Combo x${combo}`;
+            comboDisplay.classList.add('active');
+            
+            if (combo === 5) showAchievement('COMBO MASTER!');
+            if (combo === 10) showAchievement('UNSTOPPABLE!');
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter' && !gameStarted && loadingScreen.style.display === 'flex') {
+                startGame();
+            } else if(e.key === ' ' && gameStarted && !gameOver) {
+                if (player.velocity >= 0 || player.doubleJumpAvailable && !player.hasDoubleJumped) {
+                    if (player.velocity < 0) {
+                        player.hasDoubleJumped = true;
+                        showNotification('DOUBLE JUMP!', '#00FFFF');
+                    }
+                    
+                    player.velocity = player.jump;
+                    player.currentImage = 'jumping';
+                    player.jumpAnimationTimer = 15;
+                    player.rotation = -0.3;
+                    totalJumps++;
+                    
+                    audio.jump.currentTime = 0;
+                    audio.jump.play().catch(err => console.log('Jump sound error:', err));
+                }
+                
+                e.preventDefault();
+            } else if(e.key === 'Enter' && showingEndingVideo) {
+                restartGame();
+            } else if(e.key.toLowerCase() === 'd' && gameStarted) {
+                debugMode = !debugMode;
+                debugInfo.style.display = debugMode ? 'block' : 'none';
+            }
+        });
+        
+        canvas.addEventListener('click', () => {
+            if(gameStarted && !gameOver) {
+                if (player.velocity >= 0 || player.doubleJumpAvailable && !player.hasDoubleJumped) {
+                    if (player.velocity < 0) {
+                        player.hasDoubleJumped = true;
+                        showNotification('DOUBLE JUMP!', '#00FFFF');
+                    }
+                    
+                    player.velocity = player.jump;
+                    player.currentImage = 'jumping';
+                    player.jumpAnimationTimer = 15;
+                    player.rotation = -0.3;
+                    totalJumps++;
+                    
+                    audio.jump.currentTime = 0;
+                    audio.jump.play().catch(err => console.log('Jump sound error:', err));
+                }
+            }
+        });
+        
+        function startGame() {
+            gameStarted = true;
+            loadingScreen.style.display = 'none';
+            canvas.style.display = 'block';
+            gameHUD.style.display = 'block';
+            loadingVideo.pause();
+            loadingVideo.currentTime = 0;
+            audio.background.play();
+            init();
+            fireWalls.push(new FireWall(canvas.width + 100));
+            gameLoop();
+        }
+        
+        function showEndingVideo() {
+            showingEndingVideo = true;
+            canvas.style.display = 'none';
+            gameHUD.style.display = 'none';
+            debugInfo.style.display = 'none';
+            endingScreen.style.display = 'flex';
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('fireWallHighScore', highScore);
+                newHighScoreElement.style.display = 'block';
+            } else {
+                newHighScoreElement.style.display = 'none';
+            }
+            
+            finalScoreElement.textContent = `Final Score: ${score}`;
+            finalScoreElement.style.display = 'block';
+            
+            endingVideo.play();
+            endingVideo.onended = function() {
+                restartPrompt.style.display = 'block';
+            };
+        }
+        
+        function restartGame() {
+            endingScreen.style.display = 'none';
+            endingVideo.pause();
+            endingVideo.currentTime = 0;
+            restartPrompt.style.display = 'none';
+            finalScoreElement.style.display = 'none';
+            newHighScoreElement.style.display = 'none';
+            canvas.style.display = 'block';
+            gameHUD.style.display = 'block';
+            highScoreElement.textContent = `Best: ${highScore}`;
+            init();
+            fireWalls.push(new FireWall(canvas.width + 100));
+            audio.background.play();
+            gameLoop();
+        }
+        
+        function checkCollision() {
+            if (invincibleTimer > 0) return false;
+            
+            const hitbox = player.getHitbox();
+            
+            if(hitbox.y < 70 || hitbox.y + hitbox.height > canvas.height - 70) {
+                return true;
+            }
+
+            for(let wall of fireWalls) {
+                if(hitbox.x < wall.x + wall.width/2 &&
+                   hitbox.x + hitbox.width > wall.x - wall.width/2) {
+                    if(hitbox.y < wall.topHeight ||
+                       hitbox.y + hitbox.height > wall.bottomY) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
+        function drawPlayer() {
+            ctx.save();
+
+            ctx.globalAlpha = 1;
+            
+            if (invincibleTimer > 0) {
+                ctx.shadowColor = '#00FF00';
+                ctx.shadowBlur = 30 + Math.sin(frameCount * 0.3) * 10;
+                
+                const shieldGradient = ctx.createRadialGradient(
+                    player.x + player.imageSize/2, 
+                    player.y + player.imageSize/2, 
+                    0,
+                    player.x + player.imageSize/2, 
+                    player.y + player.imageSize/2, 
+                    player.imageSize * 0.7
+                );
+                shieldGradient.addColorStop(0, 'rgba(0, 255, 0, 0)');
+                shieldGradient.addColorStop(0.7, 'rgba(0, 255, 0, 0.2)');
+                shieldGradient.addColorStop(1, 'rgba(0, 255, 0, 0.5)');
+                
+                ctx.fillStyle = shieldGradient;
+                ctx.beginPath();
+                ctx.arc(player.x + player.imageSize/2, player.y + player.imageSize/2, player.imageSize * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.shadowColor = '#FF6600';
+                ctx.shadowBlur = 30;
+            }
+            
+            let imageToUse = player.images.normal;
+
+            if(player.currentImage === 'jumping' && player.images.jumping.complete) {
+                imageToUse = player.images.jumping;
+            } else if(player.currentImage === 'crashed' && player.images.crashed.complete) {
+                imageToUse = player.images.crashed;
+            } else if(player.images.normal.complete) {
+                imageToUse = player.images.normal;
+            }
+
+            player.rotation *= 0.95;
+            player.rotation += player.velocity * 0.01;
+            
+            if(imageToUse.complete && imageToUse.naturalHeight !== 0) {
+                ctx.translate(player.x + player.imageSize/2, player.y + player.imageSize/2);
+                ctx.rotate(player.rotation);
+                ctx.drawImage(imageToUse, -player.imageSize/2, -player.imageSize/2, player.imageSize, player.imageSize);
+            } else {
+                ctx.fillStyle = player.currentImage === 'crashed' ? '#FF0000' : '#FF6600';
+                ctx.fillRect(player.x, player.y, player.imageSize, player.imageSize);
+            }
+            
+            ctx.restore();
+            
+            if(debugMode) {
+                const hitbox = player.getHitbox();
+                ctx.strokeStyle = invincibleTimer > 0 ? 'green' : 'lime';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height);
+                ctx.setLineDash([]);
+                
+                ctx.strokeStyle = 'yellow';
+                ctx.strokeRect(player.x, player.y, player.imageSize, player.imageSize);
+            }
+        }
+        
+        function updatePowerUpTimers() {
+            if (invincibleTimer > 0) {
+                invincibleTimer--;
+                powerUpIndicator.style.display = 'block';
+                powerUpIndicator.textContent = '🛡️';
+                powerUpIndicator.className = 'powerUpActive';
+                
+                if (invincibleTimer === 0) {
+                    showNotification('Shield expired!', '#FF0000');
+                }
+            } else if (slowMotionTimer > 0) {
+                slowMotionTimer--;
+                fireWallSpeed = baseSpeed * speedMultiplier * 0.5;
+                powerUpIndicator.style.display = 'block';
+                powerUpIndicator.textContent = '⏰';
+                powerUpIndicator.className = 'powerUpActive';
+                
+                if (slowMotionTimer === 0) {
+                    fireWallSpeed = baseSpeed * speedMultiplier;
+                    showNotification('Slow motion ended!', '#FF0000');
+                }
+            } else if (doublePointsTimer > 0) {
+                doublePointsTimer--;
+                powerUpIndicator.style.display = 'block';
+                powerUpIndicator.textContent = '💎';
+                powerUpIndicator.className = 'powerUpActive';
+                
+                if (doublePointsTimer === 0) {
+                    showNotification('Double points ended!', '#FF0000');
+                }
+            } else {
+                powerUpIndicator.style.display = 'none';
+            }
+        }
+        
+        function gameLoop() {
+            if(gameOver) {
+                cancelAnimationFrame(animationId);
+                audio.background.pause();
+                audio.jump.volume = 0;
+                audio.hit.currentTime = 0;
+                audio.hit.play();
+                player.currentImage = 'crashed';
+
+                for(let i = 0; i < 50; i++) {
+                    explosionParticles.push(new ExplosionParticle(
+                        player.x + player.imageSize/2,
+                        player.y + player.imageSize/2
+                    ));
+                }
+
+                drawBackground();
+                drawPlayer();
+                
+                explosionParticles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+
+                setTimeout(() => {
+                    showEndingVideo();
+                }, 1000);
+                return;
+            }
+            
+            frameCount++;
+            
+            drawBackground();
+            
+            if(frameCount % 10 === 0) {
+                createBorderFlames();
+            }
+            
+            updatePowerUpTimers();
+            
+            updateDifficulty();
+            
+            updateCombo();
+            
+            player.velocity += player.gravity;
+            player.y += player.velocity;
+            
+            if (player.velocity > 0) {
+                player.hasDoubleJumped = false;
+            }
+            
+            if(player.jumpAnimationTimer > 0) {
+                player.jumpAnimationTimer--;
+                if(player.jumpAnimationTimer === 0) {
+                    player.currentImage = 'normal';
+                }
+            }
+            
+            for(let i = fireParticles.length - 1; i >= 0; i--) {
+                fireParticles[i].update();
+                fireParticles[i].draw();
+                
+                if(fireParticles[i].life <= 0 || fireParticles[i].size <= 0) {
+                    fireParticles.splice(i, 1);
+                }
+            }
+            
+            for(let i = emberParticles.length - 1; i >= 0; i--) {
+                emberParticles[i].update();
+                emberParticles[i].draw();
+                
+                if(emberParticles[i].life <= 0 || emberParticles[i].size <= 0) {
+                    emberParticles.splice(i, 1);
+                }
+            }
+            
+            for(let i = borderFlames.length - 1; i >= 0; i--) {
+                borderFlames[i].update();
+                borderFlames[i].draw();
+                
+                if(borderFlames[i].life <= 0) {
+                    borderFlames.splice(i, 1);
+                }
+            }
+            
+            for(let i = explosionParticles.length - 1; i >= 0; i--) {
+                explosionParticles[i].update();
+                explosionParticles[i].draw();
+                
+                if(explosionParticles[i].life <= 0 || explosionParticles[i].size <= 0) {
+                    explosionParticles.splice(i, 1);
+                }
+            }
+            
+            if(fireParticles.length > 300) {
+                fireParticles.splice(0, fireParticles.length - 300);
+            }
+            if(emberParticles.length > 150) {
+                emberParticles.splice(0, emberParticles.length - 150);
+            }
+            
+            for(let i = fireWalls.length - 1; i >= 0; i--) {
+                fireWalls[i].update();
+                fireWalls[i].draw();
+                
+                const hitbox = player.getHitbox();
+                if(!fireWalls[i].passed && fireWalls[i].x + fireWalls[i].width/2 < hitbox.x) {
+                    fireWalls[i].passed = true;
+                    consecutivePasses++;
+                    
+                    let points = 1;
+                    if (doublePointsTimer > 0) points *= 2;
+                    points *= combo;
+                    
+                    score += points;
+                    scoreElement.textContent = `Score: ${score}`;
+                    
+                    triggerCombo();
+                    
+                    audio.whoosh.currentTime = 0;
+                    audio.whoosh.play();
+                    
+                    if (consecutivePasses === 10) {
+                        showAchievement('PERFECT 10!');
+                        score += 10;
+                    }
+                }
+                
+                if(fireWalls[i].x < -100) {
+                    fireWalls.splice(i, 1);
+                }
+            }
+            
+            if(fireWalls.length === 0 || fireWalls[fireWalls.length - 1].x < canvas.width - 400) {
+                fireWalls.push(new FireWall(canvas.width));
+                
+                if (Math.random() < 0.2) {
+                    powerUps.push(new PowerUp(
+                        canvas.width + 200,
+                        Math.random() * (canvas.height - 200) + 100
+                    ));
+                }
+            }
+            
+            for(let i = powerUps.length - 1; i >= 0; i--) {
+                powerUps[i].update();
+                powerUps[i].draw();
+                powerUps[i].checkCollection();
+                
+                if(powerUps[i].collected || powerUps[i].x < -50) {
+                    powerUps.splice(i, 1);
+                }
+            }
+            
+            drawPlayer();
+            
+            if(checkCollision()) {
+                gameOver = true;
+                consecutivePasses = 0;
+            }
+            
+            animationId = requestAnimationFrame(gameLoop);
+        }
+        
+        endingVideo.addEventListener('error', function(e) {
+            console.error('Error loading ending video:', e);
+            restartPrompt.style.display = 'block';
+        });
+        
+        loadingVideo.addEventListener('error', function(e) {
+            console.error('Error loading loading video:', e);
+            document.getElementById('startPrompt').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
