@@ -646,6 +646,8 @@
         let debugMode = false;
         let frameCount = 0;
         let audioEnabled = false;
+        let videosPreloaded = false;
+        let loadingProgress = 0;
         
         let combo = 1;
         let comboTimer = 0;
@@ -665,36 +667,67 @@
         let slowMotionTimer = 0;
         
         highScoreElement.textContent = `Best: ${highScore}`;
-        
+
+        function preloadVideos() {
+            if (videosPreloaded) return Promise.resolve();
+
+            return new Promise((resolve) => {
+                const loadingVideo = document.getElementById('loadingVideo');
+                const endingVideo = document.getElementById('endingVideo');
+
+                let loadedCount = 0;
+                const totalVideos = 2;
+
+                function onVideoLoad() {
+                    loadedCount++;
+                    loadingProgress = loadedCount / totalVideos;
+
+                    if (loadedCount === totalVideos) {
+                        videosPreloaded = true;
+                        resolve();
+                    }
+                }
+
+                loadingVideo.addEventListener('canplaythrough', onVideoLoad);
+                endingVideo.addEventListener('canplaythrough', onVideoLoad);
+
+                // Force load
+                loadingVideo.load();
+                endingVideo.load();
+            });
+        }
+
         function handleInitialInteraction() {
             if (!audioEnabled) {
                 audioEnabled = true;
-                
+
                 clickPrompt.style.display = 'none';
                 loadingDots.style.display = 'block';
-                
+
                 audio.jump.load();
                 audio.hit.load();
                 audio.background.load();
                 audio.powerUp.load();
                 audio.achievement.load();
                 audio.whoosh.load();
-                
-                loadingVideo.muted = false;
-                loadingVideo.volume = 1;
-                loadingVideo.play().then(() => {
-                    setTimeout(() => {
-                        initialLoadingScreen.style.display = 'none';
-                        loadingScreen.style.display = 'flex';
-                        loadingVideo.play(); 
-                    }, 1000);
-                }).catch(err => {
-                    console.log('Video play failed:', err);
-                   
-                    setTimeout(() => {
-                        initialLoadingScreen.style.display = 'none';
-                        loadingScreen.style.display = 'flex';
-                    }, 1000);
+
+                preloadVideos().then(() => {
+                    loadingVideo.muted = false;
+                    loadingVideo.volume = 1;
+                    loadingVideo.play().then(() => {
+                        setTimeout(() => {
+                            initialLoadingScreen.style.display = 'none';
+                            loadingScreen.style.display = 'flex';
+                            loadingVideo.play();
+                        }, 1000);
+                    }).catch(err => {
+                        console.log('Video play failed:', err);
+
+                        setTimeout(() => {
+                            initialLoadingScreen.style.display = 'none';
+                            loadingScreen.style.display = 'flex';
+                        }, 1000);
+                    });
                 });
             }
         }
